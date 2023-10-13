@@ -64,7 +64,7 @@ function HFModel_vanHoveDOS(Nf,N,W,U)
     return HFModel(Nf,ϵs,ρs,total_densities,Umat)
 end
 
-function HFmodel_supermoire(N; U0 = 30,U1=15, δ=0.075)
+function HFmodel_supermoire(N; Umm = 30, Usmsm=15, Umsm = 30, δ=0.075)
     Nf1,Nf2 = 8,8
     Nf = Nf1+Nf2
 
@@ -118,7 +118,67 @@ function HFmodel_supermoire(N; U0 = 30,U1=15, δ=0.075)
     end
     Ekin_ns = [linear_interpolation(νs[α],Ekins[α], extrapolation_bc=Line()) for α in 1:Nf];
 
-    Umat = kron([U0 U0; U0 U1], fill(1.0,Nf1,Nf1)-I)
+    Umat = kron([Umm Umsm; Umsm Usmsm], fill(1.0,Nf1,Nf1)-I)
+
+    return HFModel(Nf, Umat, ϵs, ρs, νs, Ekins, Ekin_ns);
+end
+
+
+function HFmodel_supermoire2(N; Umm = 30, Usmsm=15, Umsm = 30, W1=20, W2 = 20, δ=0.075)
+    Nf1,Nf2 = 8,8
+    Nf = Nf1+Nf2
+
+    ϵs = Array{Array{Float64,1},1}(undef,Nf)
+    ρs = Array{Array{Float64,1},1}(undef,Nf)
+    νs = Array{Array{Float64,1},1}(undef,Nf)
+    Ekins = Array{Array{Float64,1},1}(undef,Nf)
+
+    n1total = (1-δ*Nf2/Nf1) #2 bands
+    n2total = δ     #2 band
+    totaldensities = vcat(fill(n1total,Nf1),fill(n2total,Nf2))
+
+    # W1,W2 = 20, 15
+    ϵs1 = 0:(W1/N):W1
+    ϵs2 = -W1:(W1/N):W1
+    ρvanHove1(ϵ) =  min(1,ρvanHove(ϵ,W1,W1,0.7*W1))
+    ρvanHove2(ϵ) =  min(2,ρvanHove(ϵ,W2,W2,0.7*W2))
+
+    #initialize bands 
+    for (n1,n2) in zip(4:-1:1,5:8)
+        ρs1 = ρvanHove1.(ϵs1)
+        ρs1 .*= n1total/trapezoidintegration(ϵs1,ρs1)
+        #hole bands 
+        ϵs[n1] = collect(-reverse(ϵs1))
+        ρs[n1] = reverse(ρs1)
+        #electron bands
+        ϵs[n2] = ϵs1
+        ρs[n2] = ρs1
+
+        ρs2 = ρvanHove2.(ϵs2)
+        ρs2 .*= n2total/trapezoidintegration(ϵs2,ρs2)
+        #hole bands
+        ϵs[n1+Nf1] = collect(-reverse(ϵs2))
+        ρs[n1+Nf1] = reverse(ρs2)
+        #electron bands
+        ϵs[n2+Nf1] = ϵs2
+        ρs[n2+Nf1] = ρs2
+    end
+    
+    for α in 1:Nf
+        @assert trapezoidintegration(ϵs[α],ρs[α]) ≈ totaldensities[α]
+        νs[α] = cumualtivetrapezoidintegration(ϵs[α], ρs[α]) #uncentered
+        Ekins[α] = cumualtivetrapezoidintegration(ϵs[α], (ϵs[α]) .* ρs[α]) #uncentered
+    end
+    for n in 1:div(Nf1,2)
+        Ekins[n] .-= Ekins[n][end]
+    end
+    for α in Nf1+1:Nf
+        Ekins[α] = cumualtivetrapezoidintegration(ϵs[α], abs.(ϵs[α]) .* ρs[α])
+        Ekins[α] .-= Ekins[α][div(length(Ekins[α]),2)+1];
+    end
+    Ekin_ns = [linear_interpolation(νs[α],Ekins[α], extrapolation_bc=Line()) for α in 1:Nf];
+
+    Umat = kron([Umm Umsm; Umsm Usmsm], fill(1.0,Nf1,Nf1)-I)
 
     return HFModel(Nf, Umat, ϵs, ρs, νs, Ekins, Ekin_ns);
 end
@@ -133,7 +193,7 @@ function grandpotential(νs, μ, hfm)
     return E
 end
 
-function run_HF(μs, hfm, repeats = 10, verbose=true)
+function run_HF(μs, hfm, repeats = 10; verbose=true)
     νsopt = Array{Array{Float64,1},1}([])
     Φsopt = Array{Float64,1}([])
 
@@ -151,4 +211,3 @@ function run_HF(μs, hfm, repeats = 10, verbose=true)
     end
     return νsopt, Φsopt
 end
-
