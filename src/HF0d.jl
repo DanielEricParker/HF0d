@@ -11,7 +11,7 @@ include("utilities.jl")
 include("HFmodel.jl")
 
 export trapezoidintegration,cumualtivetrapezoidintegration
-export HFModel, grandpotential, run_HF
+export HFModel, grandpotential, ∇grandpotential!, run_HF,run_HF2
 export HFModel_linearDOS, HFModel_vanHoveDOS, HFmodel_supermoire
 export compressibility
 

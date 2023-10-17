@@ -6,11 +6,12 @@ push!(LOAD_PATH,"../")
 using HF0d
 
 
-function runHF(;Umm=30,Umsm=30,Usmsm=0,W1=20,W2=20,δ=0.075,N=10000,NN=10, repeats=10)
+function runHF(;Umm=30,Umsm=30,Usmsm=0,W1=20,W2=20,δ=0.075,N=1000,repeats=12)
 
     Nf1,Nf2,Nf = 8,8,16
-    hfm = HF0d.HFmodel_supermoire2(N; Umm=Umm, Umsm = Umsm, Usmsm = Usmsm, W1=W1, W2=W2, δ=δ);
-    μs = range(50,250,length=NN)
+    hfm = HF0d.HFmodel_supermoire(N; Umm=Umm, Umsm = Umsm, Usmsm = Usmsm, W1=W1, W2=W2, δ=δ);
+    # μs = range(120,250,length=NN)
+    μs = 120:0.25:240 #120:2:250
 
     println("Running HF (0D). ")
     νsopt, Φsopt = run_HF(μs,hfm,repeats; verbose=false);
@@ -22,21 +23,22 @@ function runHF(;Umm=30,Umsm=30,Usmsm=0,W1=20,W2=20,δ=0.075,N=10000,NN=10, repea
     νstot, κs = compressibility(μs, νsopt2; smooth=2, cutoff=1e-3)
     νstot .-= 4;
 
-    νs_interp = range(-0.2,4,length=20000)
+    # νs_interp = range(-0.2,4,length=20000)
+    # p = sortperm(νstot)
+    # itp = linear_interpolation(νs_interp[p], κs[p],extrapolation_bc=Interpolations.Line())
+    # κs_interp = itp.(νs_interp)
 
-    p = sortperm(νstot)
-    itp = linear_interpolation(νs_interp[p], κs[p],extrapolation_bc=Interpolations.Line())
-    κs_interp = itp.(νs_interp)
-
-    file = h5open("data/dat_W2_$(W2).h5","w") 
+    file = h5open("data4/dat_W2_$(W2).h5","w") 
+        file["W1"] = W1
+        file["W2"] = W2
         file["Umm"] = Umm
         file["Umsm"] = Umsm
         file["Usmsm"] = Usmsm
         file["mus"] = collect(μs)
         file["nus"] = νstot
         file["kappas"] = κs
-        file["nus_interp"] = collect(νs_interp)
-        file["kappas_interp"] = κs_interp
+        # file["nus_interp"] = collect(νs_interp)
+        # file["kappas_interp"] = κs_interp
         file["repeats"] = repeats
         file["N"] = N
         file["NN"] = NN
@@ -48,10 +50,14 @@ end
 
 function main()
     println(Threads.nthreads())
-    W2s = 10:2:26
+    W2s = 16:1:24
     Threads.@threads for W2 in W2s
         println(Threads.threadid())
-        runHF(W2=W2)
+        try
+            runHF(W2=W2)
+        catch
+            println("Failure at W2=$(W2)")
+        end
     end
 end
 main()
