@@ -15,7 +15,8 @@ Installation Instructions:
 - Install the following packages for the notebook to run: `HDF5, Interpolations, DataFrames, ColorSchemes`
 - For plotting, install PyPlot following instructions at `https://github.com/JuliaPy/PyPlot.jl`.
 - The notebook with generate several folders inside the `Examples` folder to store data.
-- The code takes about 10-60 minutes to run on a laptop.
+- The code takes about 10 minutes to run on a laptop in "quick" mode, but 30-60 minutes to
+produce the figures used in the paper at full resolution.
 
 Much of this code was adapted from https://github.com/erezberg/Dirac_revivals_theory that
 was used for the theory of https://www.nature.com/articles/s41586-020-2373-y

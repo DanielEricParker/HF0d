@@ -71,7 +71,7 @@ function process_raw_data_files_to_dataframe(datafiles; verbose=true)
 end
 
 
-function generate_Wsm_scan_data(folder,W2s,verbose=true)
+function generate_Wsm_scan_data(folder,W2s,μs = 0:0.25:150,verbose=true)
     println(Threads.nthreads())
     #embarrassingly parallel for loop we can multithread
     Threads.@threads for W2 in W2s
@@ -80,7 +80,7 @@ function generate_Wsm_scan_data(folder,W2s,verbose=true)
                     Umm=30,Umsm=30,Usmsm=0,
                     W1=20,W2=W2,δ=0.075,
                     N=1000, repeats=12,
-                    μs = 0:0.25:150,
+                    μs = μs,
                     save_all_species=true,
                     verbose=verbose
                 );
@@ -92,7 +92,7 @@ function generate_Wsm_scan_data(folder,W2s,verbose=true)
     end
 end
 
-function generate_Um_scan_data(folder, Umms, verbose=true)
+function generate_Um_scan_data(folder, Umms, μs = 0:0.25:150, verbose=true)
     println(Threads.nthreads())
     #embarrassingly parallel for loop we can multithread
     Threads.@threads for Um in Umms
@@ -101,7 +101,7 @@ function generate_Um_scan_data(folder, Umms, verbose=true)
                     Umm=Um,Umsm=Um,Usmsm=0,
                     W1=20,W2=5,δ=0.075,
                     N=1000, repeats=12,
-                    μs = 0:0.25:150,
+                    μs = μs,
                     save_all_species=true,
                     verbose=verbose
                 );
