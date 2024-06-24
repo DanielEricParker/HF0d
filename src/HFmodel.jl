@@ -27,7 +27,9 @@ function HFModel(Nf,ϵs,ρs,totaldensities, Umat)
         Ekins[α] = zeromiddle!(cumualtivetrapezoidintegration(ϵs[α], ϵs[α] .* ρs[α]))
     end
     Ekin_ns = [linear_interpolation(νs[α],Ekins[α], extrapolation_bc=Line()) for α in 1:Nf]
-    return HFModel(Nf, Umat, ϵs, ρs, νs, Ekins, Ekin_ns)
+    ν0 = zeros(Float64,Nf)
+    dν0 = ones(Int64,Nf)
+    return HFModel(Nf, Umat, ϵs, ρs, νs, Ekins, Ekin_ns,ν0,dν0)
 end
 
 # various DOS models 
@@ -63,7 +65,7 @@ function HFModel_vanHoveDOS(Nf,N,W,U)
         ρα .*= 2/trapezoidintegration(ϵα,ρα)
     end
     total_densities = trapezoidintegration.(ϵs,ρs)
-
+    @show typeof(total_densities)
     return HFModel(Nf,ϵs,ρs,total_densities,Umat)
 end
 
@@ -125,10 +127,7 @@ function HFmodel_supermoire(N; Umm = 30, Usmsm=15, Umsm = 30, W1=20, W2 = 20, δ
             dν0[α] = 1
         end
     end
-
-
     Ekin_ns = [linear_interpolation(νs[α],Ekins[α], extrapolation_bc=Line()) for α in 1:Nf];
-
     Umat = kron([Umm Umsm; Umsm Usmsm], fill(1.0,Nf1,Nf1)-I)
 
     return HFModel(Nf, Umat, ϵs, ρs, νs, Ekins, Ekin_ns,ν0,dν0);
@@ -147,7 +146,7 @@ end
 
 function ∇grandpotential!(∇Φ,νs,μ,hfm)
     for i in eachindex(∇Φ)
-        Interpolations.gradient(hfm.Ekin_ns[i],νs[i])[1]
+        # Interpolations.gradient(hfm.Ekin_ns[i],νs[i])[1]
         ∇Φ[i] = Interpolations.gradient(hfm.Ekin_ns[i],νs[i])[1]
         ∇Φ[i] -= μ
     end
@@ -167,17 +166,22 @@ function run_HF(μs, hfm, repeats = 12; verbose=true)
         verbose && n % 10 == 0 && println("μ = $μ ($n/$(length(μs)))")
         F(μs) = grandpotential(μs,μ,hfm)
         dF!(buffer, μs) = ∇grandpotential!(buffer,μs,μ,hfm)
-        
         results = []
-        for m in 1:repeats
+        m = 1 
+        while m < repeats
             if m==1 & n >1
                 ν0 = νsopt[n-1]
             else
                 ν0 = random_ναs()
             end
-            opt = optimize(F, dF!, lowerbounds, upperbounds,ν0 , Fminbox(GradientDescent()))
-            if !isnan(Optim.minimum(opt))
-                push!(results,opt)
+            try 
+                opt = optimize(F, dF!, lowerbounds, upperbounds,ν0 , Fminbox(GradientDescent()))
+                if !isnan(Optim.minimum(opt))
+                    push!(results,opt)
+                    m += 1
+                end
+            catch AssertionError
+                println("Optimization didn't converge with ν0=$(ν0).")
             end
         end
         opt = argmin(res -> Optim.minimum(res),results) #select global minimum 
