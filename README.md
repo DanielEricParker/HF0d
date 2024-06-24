@@ -4,7 +4,8 @@ Installation Instructions:
 1. Clone this repository
 2. Install Julia 1.10 (e.g. using https://github.com/JuliaLang/juliaup.)
 3. Install packages needed for this code:
-- Call `julia --project=/path/to/the/folder/where/this/repository/was/cloned/"
+- Call `julia --project=/path/to/the/folder/where/this/repository/was/cloned/`
+- Alternatively, navigate to the folder with the command line, then call `julia --project=.`
 - Press "]" to go to the package manager
 - Type `instantiate"` then press return to install required packages
 - Check installation by exiting the package manager with `delete`/`backspace`, then call `using HD0d`.
