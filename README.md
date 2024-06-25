@@ -2,9 +2,9 @@ This repository contains code to reproduce all theoretical models for "Strong in
 
 Installation Instructions:
 1. Clone this repository
-2. Install Julia 1.10 (e.g. using https://github.com/JuliaLang/juliaup.)
+2. Install Julia 1.10 (e.g. using https://github.com/JuliaLang/juliaup.) Note: earlier versions of julia may be incompatible with this package.
 3. Install packages needed for this code:
-- Call `julia --project=/path/to/the/folder/where/this/repository/was/cloned/`.
+- Call `julia --project=/path/to/HD0d/`.
 - Alternatively, navigate to the folder with the command line, then call `julia --project=.`
 - Press "]" to enter the julia package manager.
 - Type `instantiate` then press return to install required packages.
@@ -14,6 +14,7 @@ Installation Instructions:
 5. Run the notebook `Examples/Supermoire_model_Figures.ipynb` to generate all theoretical data.
 - Install the following packages for the notebook to run: `HDF5, Interpolations, DataFrames, ColorSchemes`
 - For plotting, install PyPlot following instructions at `https://github.com/JuliaPy/PyPlot.jl`.
+- Ensure that the `LOAD_PATH` environment variable in julia contains the `HD0d` folder so that `using HD0d` sees the package.
 - The notebook with generate several folders inside the `Examples` folder to store data.
 - The code takes about 10 minutes to run on a laptop in "quick" mode, but 30-60 minutes to
 produce the figures used in the paper at full resolution.
